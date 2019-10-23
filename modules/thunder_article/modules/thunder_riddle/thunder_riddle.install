@@ -58,7 +58,6 @@ function thunder_riddle_uninstall() {
     'core.entity_view_display.media.riddle.thumbnail',
     'core.entity_view_display.paragraph.riddle.default',
     'core.entity_view_display.paragraph.riddle.preview',
-    'entity_browser.browser.riddle_browser',
     'field.field.media.riddle.field_riddle_id',
     'field.field.paragraph.riddle.field_riddle',
     'field.storage.media.field_riddle_id',
