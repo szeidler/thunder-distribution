@@ -25,7 +25,7 @@ files that are shipped in the distribution should be:
   ```
   drush en config_profile
   ```
-* Make all your changes in the UI
+* Apply all your changes in the UI
 * Export your configuration
   ```
   drush cex
@@ -44,9 +44,9 @@ folder
 Thunder distribution comes with a set of drupal tests. They can be used to validate Thunder installation or to use provided traits for your own project drupal tests.
 
 #### How to run the tests
-In order to execute tests, following steps have to be executed.
+In order to execute tests follow these steps.
 
-Enable the Simpletest module. Over administration UI or by drush.
+Enable the Simpletest module via the administration UI or by using a drush command.
 
 ```bash
 drush -y en simpletest
@@ -96,7 +96,7 @@ thunderDumpFile=thunder.sql.gz php ./core/scripts/run-tests.sh --php '/usr/local
 --verbose --url http://thunder.dd:8083 --dburl mysql://drupaluser@127.0.0.1:33067/thunder --class "Drupal\Tests\thunder\Functional\InstalledConfigurationTest"
 ```
 
-This is just an example. For better explanation see [Running PHPUnit tests](https://www.drupal.org/docs/8/phpunit/running-phpunit-tests)
+This is just an example. For a better explanation see [Running PHPUnit tests](https://www.drupal.org/docs/8/phpunit/running-phpunit-tests)
 
 Sometimes tests are executed inside docker container where selenium is running inside other containers and it's not possible to access it over localhost.
 Or there are cases when two separated containers are running on the same machine but on different ports (for example Chrome and Firefox selenium containers).
@@ -113,6 +113,24 @@ That information will be picked up by testing classes and used for selenium endp
 3. You need to install [Elastic APM Node.js Agent](https://www.npmjs.com/package/elastic-apm-node) in Drupal Core node packages. To do that go to your `docroot/core` directory and execute following command: `yarn add elastic-apm-node --dev`
 4. You have to adjust your `.env` file inside `docroot/core` directory. You can copy the `.env.example` to `.env` and edit it accordingly. Thunder tests require the following environment variables: `DRUPAL_TEST_BASE_URL`, `THUNDER_BRANCH`, `THUNDER_SITE_HOSTNAME` and `THUNDER_APM_URL`. The `THUNDER_BRANCH` is branch name where tests are executing, for example, `8.x-4.x`. The `THUNDER_SITE_HOSTNAME` is hostname where tests are executing, for example `thunder.dev`. The `THUNDER_APM_URL` is URL to Elastic APM Server, for example `http://localhost:8200`.
 5. After that, you can run NightwatchJS tests by executing the following command inside `docroot/core` directory: `yarn test:nightwatch <path to JS Test file>`. Here is an example: `yarn test:nightwatch ../profiles/contrib/thunder/tests/src/Nightwatch/Tests/CreateMostUsedContent.js`
+
+**If you have problem with outdated chromedriver**
+
+Drupal core does not update javascript dependencies so fast and chromedriver may be outdated and unable to work with chrome installed on the system. You can provide chrome that can be used by chromedriver inside a docker container. You can do it with the following command:
+```shell script
+docker run --name selenium_chrome -d -P -p 6000:5900 -p 4444:4444 --shm-size 256m --add-host="thunder.dd:172.16.123.1" selenium/standalone-chrome-debug:3.141.59-selenium
+```
+
+You have to find what is correct docker image tag for the chrome version you need. To do that you have to take a look at [selenium docker releases](https://github.com/SeleniumHQ/docker-selenium/releases).
+This workflow is similar to PHP JavaScript tests and for additional information, you can take a look at **How to run the tests** section.
+
+After you have running chrome in docker, you have also to change environment variables in `.env` file. Following environment variable should be set:
+```shell script
+DRUPAL_TEST_WEBDRIVER_PORT=4444
+DRUPAL_TEST_WEBDRIVER_PATH_PREFIX=/wd/hub
+DRUPAL_TEST_CHROMEDRIVER_AUTOSTART=false
+``` 
+You can copy/paste this section to the bottom of your `.env` file.
 
 ----------
 
@@ -242,9 +260,9 @@ Workflow to generate Thunder configuration update is following:
 1. Make clean install of the previous version of Thunder (version for which one you want to create configuration update). For example, if you are merging changes to `develop` branch, then you should install Thunder for that branch
 2. When Thunder is installed, make code update (with code update also configuration files will be updated, but not active configuration in database)
 3. Execute update hooks if it's necessary (e.g. in case when you have module and/or core updates in your branch)
-4. Now is a moment to generate Thunder configuration update code. For that we have provided following drupal console command: `drupal generate:thunder:update`. That command should be executed and there are several information that has to be filled, like module name where all generated data will be saved (CUD file, checklist `update.yml` and update hook function). Then also information for checklist entry, like title, success message and failure message. Command will generate CUD file and save it in `config/update` folder of the module, it will add entry in `update.yml` file for the checklist and it will create update hook function in `<module_name>.install` file.
+4. Now is a moment to generate Thunder configuration update code. For that we have provided following drupal console command: `drupal generate:configuration:update`. That command should be executed and there are several information that has to be filled, like module name where all generated data will be saved (CUD file, checklist `update.yml` and update hook function). Then also information for checklist entry, like title, success message and failure message. Command will generate CUD file and save it in `config/update` folder of the module, it will add entry in `update.yml` file for the checklist and it will create update hook function in `<module_name>.install` file.
 5. After the command has finished it will display what files are modified and generated. It's always good to make an additional check of generated code.
 
-Additional information about command options are provided with `drupal generate:thunder:update --help` and it's also possible to provide all information directly in command line without using the wizard.
+Additional information about command options are provided with `drupal generate:configuration:update --help` and it's also possible to provide all information directly in command line without using the wizard.
 
 When an update for Thunder is created don't forget to commit your update hook with `[TEST_UPDATE=true]` flag in your commit message, so that it's automatically tested.
